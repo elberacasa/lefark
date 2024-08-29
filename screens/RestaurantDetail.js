@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, TextInput, FlatList, ImageBackground, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, TextInput, FlatList, ImageBackground, Dimensions, Linking, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { getRestaurantById } from '../data/restaurants';
+import ReservationPanel from '../components/ReservationPanel';
 
 const { width } = Dimensions.get('window');
 
@@ -12,6 +13,8 @@ function RestaurantDetail({ route, navigation }) {
   const [newReview, setNewReview] = useState('');
   const [newRating, setNewRating] = useState(5);
   const [reviewPhotos, setReviewPhotos] = useState([]);
+  const [showFullDescription, setShowFullDescription] = useState(false);
+  const [showReservationPanel, setShowReservationPanel] = useState(false);
 
   const handleAddReview = () => {
     if (newReview.trim() === '') return;
@@ -95,6 +98,37 @@ function RestaurantDetail({ route, navigation }) {
     </View>
   );
 
+  const handleCall = () => {
+    const phoneNumber = restaurant.phoneNumber.replace(/\s/g, '');
+    Linking.openURL(`tel:${phoneNumber}`);
+  };
+
+  const handleWhatsApp = () => {
+    const phoneNumber = restaurant.phoneNumber.replace(/\s/g, '');
+    Linking.openURL(`whatsapp://send?phone=${phoneNumber}`);
+  };
+
+  const handleWebsite = () => {
+    Linking.openURL(`https://${restaurant.website}`);
+  };
+
+  const handleMap = () => {
+    const scheme = Platform.select({ ios: 'maps:0,0?q=', android: 'geo:0,0?q=' });
+    const latLng = `${restaurant.latitude},${restaurant.longitude}`;
+    const label = restaurant.name;
+    const url = Platform.select({
+      ios: `${scheme}${label}@${latLng}`,
+      android: `${scheme}${latLng}(${label})`
+    });
+    Linking.openURL(url);
+  };
+
+  const handleReservation = (reservationDetails) => {
+    // Here you would typically send the reservation data to a server
+    Alert.alert('Reservation Confirmed', `Your table at ${restaurant.name} has been booked for ${reservationDetails.date} at ${reservationDetails.time} for ${reservationDetails.guests} guests.`);
+    setShowReservationPanel(false);
+  };
+
   return (
     <ScrollView style={styles.container}>
       <ImageBackground source={{ uri: restaurant.image }} style={styles.image}>
@@ -106,36 +140,44 @@ function RestaurantDetail({ route, navigation }) {
       <View style={styles.infoContainer}>
         <View style={styles.ratingContainer}>
           <Ionicons name="star" size={20} color="#FFD700" />
-          <Text style={styles.rating}>{restaurant.rating?.toFixed(1)}</Text>
+          <Text style={styles.rating}>{restaurant.rating.toFixed(1)}</Text>
           <Text style={styles.reviewCount}>({restaurant.reviewCount} reviews)</Text>
         </View>
-        <Text style={styles.address}>{restaurant.address}</Text>
-        <Text style={styles.description}>{restaurant.description}</Text>
+        <TouchableOpacity style={styles.addressContainer} onPress={handleMap}>
+          <Ionicons name="location-outline" size={20} color="#f4511e" />
+          <Text style={styles.address}>{restaurant.address}</Text>
+        </TouchableOpacity>
+        <Text style={styles.description}>
+          {showFullDescription ? restaurant.description : `${restaurant.description.slice(0, 100)}...`}
+        </Text>
+        <TouchableOpacity onPress={() => setShowFullDescription(!showFullDescription)}>
+          <Text style={styles.readMore}>{showFullDescription ? 'Read Less' : 'Read More'}</Text>
+        </TouchableOpacity>
         
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Reservation', { restaurantId, restaurantName: restaurant.name })}>
-            <Ionicons name="calendar-outline" size={24} color="#f4511e" />
-            <Text style={styles.actionButtonText}>Reserve</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleCall}>
             <Ionicons name="call-outline" size={24} color="#f4511e" />
             <Text style={styles.actionButtonText}>Call</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleWhatsApp}>
+            <Ionicons name="logo-whatsapp" size={24} color="#f4511e" />
+            <Text style={styles.actionButtonText}>WhatsApp</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton} onPress={handleWebsite}>
+            <Ionicons name="globe-outline" size={24} color="#f4511e" />
+            <Text style={styles.actionButtonText}>Website</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton} onPress={handleMap}>
             <Ionicons name="map-outline" size={24} color="#f4511e" />
             <Text style={styles.actionButtonText}>Map</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="share-outline" size={24} color="#f4511e" />
-            <Text style={styles.actionButtonText}>Share</Text>
           </TouchableOpacity>
         </View>
 
         {restaurant.specialOffer && (
-          <View style={styles.offerContainer}>
+          <TouchableOpacity style={styles.offerContainer} onPress={() => setShowReservationPanel(true)}>
             <Ionicons name="pricetag" size={20} color="#4CAF50" />
             <Text style={styles.offerText}>{restaurant.specialOffer}</Text>
-          </View>
+          </TouchableOpacity>
         )}
         
         {restaurant.menu && restaurant.menu.length > 0 && (
@@ -154,7 +196,13 @@ function RestaurantDetail({ route, navigation }) {
         <Text style={styles.sectionTitle}>Information</Text>
         <Text style={styles.info}><Ionicons name="time-outline" size={16} color="#666" /> {restaurant.openingHours}</Text>
         <Text style={styles.info}><Ionicons name="call-outline" size={16} color="#666" /> {restaurant.phoneNumber}</Text>
-        <Text style={styles.info}><Ionicons name="globe-outline" size={16} color="#666" /> {restaurant.website}</Text>
+        <TouchableOpacity onPress={handleWebsite}>
+          <Text style={[styles.info, styles.link]}><Ionicons name="globe-outline" size={16} color="#666" /> {restaurant.website}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.reserveButton} onPress={() => setShowReservationPanel(true)}>
+          <Text style={styles.reserveButtonText}>Book a Table</Text>
+        </TouchableOpacity>
 
         <Text style={styles.sectionTitle}>Reviews</Text>
         <View style={styles.addReviewContainer}>
@@ -200,6 +248,14 @@ function RestaurantDetail({ route, navigation }) {
           />
         )}
       </View>
+
+      {showReservationPanel && (
+        <ReservationPanel
+          restaurant={restaurant}
+          onClose={() => setShowReservationPanel(false)}
+          onReserve={handleReservation}
+        />
+      )}
     </ScrollView>
   );
 }
@@ -207,32 +263,31 @@ function RestaurantDetail({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#fff',
   },
   image: {
     width: '100%',
-    height: 250,
+    height: 200,
     resizeMode: 'cover',
   },
   imageOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 16,
     justifyContent: 'flex-end',
-    padding: 20,
   },
   name: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: 'white',
     marginBottom: 8,
+    color: '#fff',
   },
   cuisine: {
-    fontSize: 18,
-    color: 'white',
+    fontSize: 16,
+    color: '#fff',
     marginBottom: 8,
   },
   infoContainer: {
-    padding: 20,
+    padding: 16,
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -241,58 +296,84 @@ const styles = StyleSheet.create({
   },
   rating: {
     marginLeft: 4,
+    fontSize: 16,
     fontWeight: 'bold',
-    fontSize: 18,
   },
   reviewCount: {
     marginLeft: 4,
+    fontSize: 14,
     color: '#666',
-    fontSize: 16,
+  },
+  addressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   address: {
+    fontSize: 14,
     color: '#666',
-    marginBottom: 12,
+    marginLeft: 4,
   },
   description: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  readMore: {
+    color: '#f4511e',
+    fontWeight: 'bold',
     marginBottom: 16,
-    lineHeight: 24,
-    fontSize: 16,
   },
   quickActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   actionButton: {
     alignItems: 'center',
   },
   actionButtonText: {
     marginTop: 4,
+    fontSize: 12,
     color: '#f4511e',
   },
   offerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
     backgroundColor: '#E8F5E9',
     padding: 12,
     borderRadius: 8,
+    marginBottom: 16,
   },
   offerText: {
     marginLeft: 8,
     color: '#4CAF50',
     fontWeight: 'bold',
-    fontSize: 16,
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginTop: 24,
-    marginBottom: 16,
+    marginBottom: 8,
   },
   info: {
-    fontSize: 16,
+    fontSize: 14,
     marginBottom: 8,
+  },
+  link: {
+    color: '#f4511e',
+    textDecorationLine: 'underline',
+  },
+  reserveButton: {
+    backgroundColor: '#f4511e',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  reserveButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   menuItem: {
     width: width * 0.7,

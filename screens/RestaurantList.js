@@ -6,23 +6,15 @@ import { restaurants } from '../data/restaurants';
 
 const { width } = Dimensions.get('window');
 
-const initialRestaurants = [
-  { id: '1', name: 'Arepera La Caraqueña', cuisine: 'Venezuelan', rating: 4.7, reviewCount: 328, image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1350&q=80', price: '$$', address: 'Av. Francisco de Miranda, Caracas', specialOffer: '20% off on arepas', distance: '0.5 km', deliveryTime: '20-30 min' },
-  { id: '2', name: 'Pabellón Criollo', cuisine: 'Venezuelan', rating: 4.5, reviewCount: 215, image: 'https://images.unsplash.com/photo-1534790566855-4cb788d389ec?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1350&q=80', price: '$$$', address: 'Calle Real de Sabana Grande, Caracas', specialOffer: 'Free dessert with main course', distance: '0.8 km', deliveryTime: '25-35 min' },
-  { id: '3', name: 'Sushi Nikkei', cuisine: 'Japanese-Peruvian', rating: 4.8, reviewCount: 542, image: 'https://images.unsplash.com/photo-1553621042-f6e147245754?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1350&q=80', price: '$$$$', address: 'C. C. San Ignacio, Caracas', specialOffer: 'All-you-can-eat sushi on Sundays', distance: '1.2 km', deliveryTime: '30-40 min' },
-  { id: '4', name: 'La Castellana Grill', cuisine: 'Steakhouse', rating: 4.3, reviewCount: 187, image: 'https://images.unsplash.com/photo-1515443961218-a51367888e4b?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1350&q=80', price: '$$$', address: 'Av. Principal de La Castellana, Caracas', specialOffer: 'Happy hour: 2-for-1 cocktails', distance: '1.5 km', deliveryTime: '35-45 min' },
-  { id: '5', name: 'Empanadas Don Carlos', cuisine: 'Venezuelan', rating: 4.6, reviewCount: 401, image: 'https://images.unsplash.com/photo-1550950158-d0d960dff51b?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1350&q=80', price: '$', address: 'Av. Libertador, Caracas', specialOffer: 'Buy 5 empanadas, get 1 free', distance: '0.3 km', deliveryTime: '15-25 min' },
-];
-
 function RestaurantList({ navigation, route }) {
   const { city } = route.params;
-  const [restaurants, setRestaurants] = useState(restaurants);
+  const [filteredRestaurants, setFilteredRestaurants] = useState(restaurants);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
 
   useFocusEffect(
     useCallback(() => {
-      setRestaurants(initialRestaurants);
+      setFilteredRestaurants(restaurants);
       setSearchQuery('');
       setActiveFilter('All');
     }, [])
@@ -30,22 +22,20 @@ function RestaurantList({ navigation, route }) {
 
   const handleSearch = (query) => {
     setSearchQuery(query);
-    const filteredRestaurants = initialRestaurants.filter(restaurant => 
+    const filtered = restaurants.filter(restaurant => 
       restaurant.name.toLowerCase().includes(query.toLowerCase()) ||
       restaurant.cuisine.toLowerCase().includes(query.toLowerCase())
     );
-    setRestaurants(filteredRestaurants);
+    setFilteredRestaurants(filtered);
   };
 
   const handleFilter = (cuisine) => {
     setActiveFilter(cuisine);
     if (cuisine === 'All') {
-      setRestaurants(initialRestaurants);
+      setFilteredRestaurants(restaurants);
     } else {
-      const filteredRestaurants = initialRestaurants.filter(restaurant => 
-        restaurant.cuisine === cuisine
-      );
-      setRestaurants(filteredRestaurants);
+      const filtered = restaurants.filter(restaurant => restaurant.cuisine === cuisine);
+      setFilteredRestaurants(filtered);
     }
   };
 
@@ -97,7 +87,7 @@ function RestaurantList({ navigation, route }) {
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          data={['All', 'Venezuelan', 'Japanese-Peruvian', 'Steakhouse']}
+          data={['All', 'Venezuelan', 'Japanese-Peruvian', 'Spanish', 'American']}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[styles.filterButton, activeFilter === item && styles.activeFilter]}
@@ -110,7 +100,7 @@ function RestaurantList({ navigation, route }) {
         />
       </View>
       <FlatList
-        data={restaurants}
+        data={filteredRestaurants}
         renderItem={renderRestaurantItem}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContainer}

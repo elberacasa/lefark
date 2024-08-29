@@ -8,22 +8,22 @@ const reservations = [
   { id: '3', restaurant: 'Sushi Nikkei', date: '2023-05-25', time: '18:30', guests: 3 },
 ];
 
-function Reservations() {
+function Reservations({ navigation }) {
   const renderReservationItem = ({ item }) => (
     <View style={styles.reservationItem}>
       <Text style={styles.restaurantName}>{item.restaurant}</Text>
-      <Text style={styles.reservationDetails}>Fecha: {item.date}</Text>
-      <Text style={styles.reservationDetails}>Hora: {item.time}</Text>
-      <Text style={styles.reservationDetails}>Personas: {item.guests}</Text>
+      <Text style={styles.reservationDetails}>Date: {item.date}</Text>
+      <Text style={styles.reservationDetails}>Time: {item.time}</Text>
+      <Text style={styles.reservationDetails}>Guests: {item.guests}</Text>
       <TouchableOpacity style={styles.cancelButton}>
-        <Text style={styles.cancelButtonText}>Cancelar Reserva</Text>
+        <Text style={styles.cancelButtonText}>Cancel Reservation</Text>
       </TouchableOpacity>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Mis Reservas</Text>
+      <Text style={styles.title}>My Reservations</Text>
       {reservations.length > 0 ? (
         <FlatList
           data={reservations}
@@ -31,8 +31,15 @@ function Reservations() {
           keyExtractor={item => item.id}
         />
       ) : (
-        <Text style={styles.noReservations}>No tienes reservas activas.</Text>
+        <Text style={styles.noReservations}>You don't have any active reservations.</Text>
       )}
+      <TouchableOpacity
+        style={styles.newReservationButton}
+        onPress={() => navigation.navigate('RestaurantList')}
+      >
+        <Ionicons name="add-circle-outline" size={24} color="white" />
+        <Text style={styles.newReservationButtonText}>Make a New Reservation</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -79,6 +86,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+  },
+  newReservationButton: {
+    backgroundColor: '#f4511e',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 20,
+  },
+  newReservationButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginLeft: 10,
   },
 });
 
